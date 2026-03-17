@@ -1,0 +1,336 @@
+{
+  "test_summary": {
+    "total_test_time_seconds": 3.3719820976257324,
+    "edge_cases_tested": 15,
+    "edge_cases_passed": 15,
+    "performance_metrics_collected": 10,
+    "robustness_scenarios_tested": 6,
+    "timestamp": 1769653590.6150367
+  },
+  "detailed_results": {
+    "edge_cases": {
+      "minimum_length": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.5947744879908823,
+        "ai_probability": 0.5947744879908823,
+        "execution_time_ms": 32.58371353149414,
+        "text_length": 11
+      },
+      "maximum_length": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.6073820372783384,
+        "ai_probability": 0.6073820372783384,
+        "execution_time_ms": 33.257484436035156,
+        "text_length": 9999
+      },
+      "only_punctuation": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.5311780456415715,
+        "ai_probability": 0.5311780456415715,
+        "execution_time_ms": 32.35983848571777,
+        "text_length": 47
+      },
+      "only_numbers": {
+        "success": true,
+        "prediction": "Human Written",
+        "confidence": 0.5582160148826294,
+        "ai_probability": 0.4417839851173706,
+        "execution_time_ms": 33.56480598449707,
+        "text_length": 52
+      },
+      "mixed_languages": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.5835289159629373,
+        "ai_probability": 0.5835289159629373,
+        "execution_time_ms": 33.32233428955078,
+        "text_length": 49
+      },
+      "special_characters": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.59469239323168,
+        "ai_probability": 0.59469239323168,
+        "execution_time_ms": 30.74169158935547,
+        "text_length": 33
+      },
+      "repeated_words": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.8250814014889866,
+        "ai_probability": 0.8250814014889866,
+        "execution_time_ms": 34.638166427612305,
+        "text_length": 39
+      },
+      "single_word": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.616756593207049,
+        "ai_probability": 0.616756593207049,
+        "execution_time_ms": 32.62782096862793,
+        "text_length": 34
+      },
+      "scientific_notation": {
+        "success": true,
+        "prediction": "Human Written",
+        "confidence": 0.5785612144361256,
+        "ai_probability": 0.4214387855638744,
+        "execution_time_ms": 31.846046447753906,
+        "text_length": 41
+      },
+      "urls_and_emails": {
+        "success": true,
+        "prediction": "Human Written",
+        "confidence": 0.5719517823345254,
+        "ai_probability": 0.42804821766547463,
+        "execution_time_ms": 32.38224983215332,
+        "text_length": 48
+      },
+      "very_long_words": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.6167565932070491,
+        "ai_probability": 0.6167565932070491,
+        "execution_time_ms": 31.403541564941406,
+        "text_length": 90
+      },
+      "unicode_symbols": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.6269044936147283,
+        "ai_probability": 0.6269044936147283,
+        "execution_time_ms": 32.67240524291992,
+        "text_length": 47
+      },
+      "newlines_tabs": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.5290862283936653,
+        "ai_probability": 0.5290862283936653,
+        "execution_time_ms": 32.0281982421875,
+        "text_length": 44
+      },
+      "empty_sentences": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.8228645621623203,
+        "ai_probability": 0.8228645621623203,
+        "execution_time_ms": 33.34546089172363,
+        "text_length": 19
+      },
+      "code_like": {
+        "success": true,
+        "prediction": "AI Generated",
+        "confidence": 0.5631645074226422,
+        "ai_probability": 0.5631645074226422,
+        "execution_time_ms": 32.65190124511719,
+        "text_length": 45
+      }
+    },
+    "performance_stress": {
+      "length_50": {
+        "avg_time_ms": 34.48147773742676,
+        "min_time_ms": 31.550884246826172,
+        "max_time_ms": 37.3997688293457,
+        "std_time_ms": 2.052264953201189,
+        "avg_ai_prob": 0.556507613684855,
+        "prediction_variance": 2.465190328815662e-33
+      },
+      "length_100": {
+        "avg_time_ms": 35.37425994873047,
+        "min_time_ms": 32.3638916015625,
+        "max_time_ms": 37.33992576599121,
+        "std_time_ms": 1.7382582327333929,
+        "avg_ai_prob": 0.8132567190250652,
+        "prediction_variance": 9.860761315262648e-33
+      },
+      "length_500": {
+        "avg_time_ms": 37.57624626159668,
+        "min_time_ms": 33.71858596801758,
+        "max_time_ms": 47.51300811767578,
+        "std_time_ms": 5.040341156868641,
+        "avg_ai_prob": 0.8065053780918042,
+        "prediction_variance": 2.7117093616972283e-32
+      },
+      "length_1000": {
+        "avg_time_ms": 32.42793083190918,
+        "min_time_ms": 31.5859317779541,
+        "max_time_ms": 33.113718032836914,
+        "std_time_ms": 0.5584147429495658,
+        "avg_ai_prob": 0.7999234187673456,
+        "prediction_variance": 1.9721522630525296e-32
+      },
+      "length_2000": {
+        "avg_time_ms": 33.94474983215332,
+        "min_time_ms": 31.927108764648438,
+        "max_time_ms": 35.02154350280762,
+        "std_time_ms": 1.1162688068919584,
+        "avg_ai_prob": 0.8209373705260081,
+        "prediction_variance": 9.860761315262648e-33
+      },
+      "length_5000": {
+        "avg_time_ms": 35.99653244018555,
+        "min_time_ms": 34.50465202331543,
+        "max_time_ms": 37.40239143371582,
+        "std_time_ms": 1.2188621474567967,
+        "avg_ai_prob": 0.8133233172203662,
+        "prediction_variance": 2.7117093616972283e-32
+      },
+      "batch_1": {
+        "total_time_ms": 32.210588455200195,
+        "avg_time_per_text_ms": 32.210588455200195,
+        "throughput_per_second": 31.04569174173396,
+        "success_count": 1
+      },
+      "batch_5": {
+        "total_time_ms": 172.62697219848633,
+        "avg_time_per_text_ms": 34.525394439697266,
+        "throughput_per_second": 28.964187556108005,
+        "success_count": 5
+      },
+      "batch_10": {
+        "total_time_ms": 341.7329788208008,
+        "avg_time_per_text_ms": 34.17329788208008,
+        "throughput_per_second": 29.262613267547227,
+        "success_count": 10
+      },
+      "batch_20": {
+        "total_time_ms": 648.7734317779541,
+        "avg_time_per_text_ms": 32.438671588897705,
+        "throughput_per_second": 30.827402942796674,
+        "success_count": 20
+      }
+    },
+    "robustness": {
+      "academic_paper": {
+        "original": {
+          "prediction": "Human Written",
+          "confidence": 0.6224428905862631,
+          "ai_probability": 0.37755710941373694
+        },
+        "noisy": {
+          "prediction": "Human Written",
+          "confidence": 0.6667465522121228,
+          "ai_probability": 0.3332534477878772
+        },
+        "uppercase": {
+          "prediction": "Human Written",
+          "confidence": 0.5810856456291527,
+          "ai_probability": 0.4189143543708473
+        },
+        "consistency": {
+          "original_vs_noisy_diff": 0.04430366162585975,
+          "original_vs_case_diff": 0.04135724495711035
+        }
+      },
+      "casual_conversation": {
+        "original": {
+          "prediction": "AI Generated",
+          "confidence": 0.5050577817577355,
+          "ai_probability": 0.5050577817577355
+        },
+        "noisy": {
+          "prediction": "AI Generated",
+          "confidence": 0.5109307976307514,
+          "ai_probability": 0.5109307976307514
+        },
+        "uppercase": {
+          "prediction": "AI Generated",
+          "confidence": 0.5683147156742825,
+          "ai_probability": 0.5683147156742825
+        },
+        "consistency": {
+          "original_vs_noisy_diff": 0.005873015873015919,
+          "original_vs_case_diff": 0.06325693391654696
+        }
+      },
+      "news_article": {
+        "original": {
+          "prediction": "Human Written",
+          "confidence": 0.6146575836617549,
+          "ai_probability": 0.38534241633824506
+        },
+        "noisy": {
+          "prediction": "Human Written",
+          "confidence": 0.6817828796319331,
+          "ai_probability": 0.31821712036806693
+        },
+        "uppercase": {
+          "prediction": "Human Written",
+          "confidence": 0.6146575836617549,
+          "ai_probability": 0.38534241633824506
+        },
+        "consistency": {
+          "original_vs_noisy_diff": 0.06712529597017813,
+          "original_vs_case_diff": 0.0
+        }
+      },
+      "technical_documentation": {
+        "original": {
+          "prediction": "Human Written",
+          "confidence": 0.6431502143692822,
+          "ai_probability": 0.35684978563071773
+        },
+        "noisy": {
+          "prediction": "Human Written",
+          "confidence": 0.6802423671978817,
+          "ai_probability": 0.3197576328021183
+        },
+        "uppercase": {
+          "prediction": "Human Written",
+          "confidence": 0.6431502143692822,
+          "ai_probability": 0.35684978563071773
+        },
+        "consistency": {
+          "original_vs_noisy_diff": 0.037092152828599456,
+          "original_vs_case_diff": 0.0
+        }
+      },
+      "creative_writing": {
+        "original": {
+          "prediction": "Human Written",
+          "confidence": 0.556533508533529,
+          "ai_probability": 0.44346649146647105
+        },
+        "noisy": {
+          "prediction": "AI Generated",
+          "confidence": 0.5031051994892364,
+          "ai_probability": 0.5031051994892364
+        },
+        "uppercase": {
+          "prediction": "Human Written",
+          "confidence": 0.5181063379621644,
+          "ai_probability": 0.48189366203783557
+        },
+        "consistency": {
+          "original_vs_noisy_diff": 0.05963870802276533,
+          "original_vs_case_diff": 0.03842717057136452
+        }
+      },
+      "scientific_abstract": {
+        "original": {
+          "prediction": "Human Written",
+          "confidence": 0.5985270315748361,
+          "ai_probability": 0.40147296842516395
+        },
+        "noisy": {
+          "prediction": "Human Written",
+          "confidence": 0.6189090573339653,
+          "ai_probability": 0.3810909426660347
+        },
+        "uppercase": {
+          "prediction": "Human Written",
+          "confidence": 0.5848609558104513,
+          "ai_probability": 0.4151390441895487
+        },
+        "consistency": {
+          "original_vs_noisy_diff": 0.02038202575912923,
+          "original_vs_case_diff": 0.013666075764384777
+        }
+      }
+    }
+  }
+}

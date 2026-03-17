@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepFake Text Detector - AI Text Detection System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .stats-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 0 10px;
+            font-weight: 600;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .detection-form {
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 1.1rem;
+        }
+
+        .text-input {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 2px solid #dee2e6;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-card {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 15px;
+            display: none;
+        }
+
+        .result-ai {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            color: white;
+        }
+
+        .result-human {
+            background: linear-gradient(135deg, #51cf66, #40c057);
+            color: white;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .confidence-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .probability-bars {
+            margin-bottom: 20px;
+        }
+
+        .probability-item {
+            margin-bottom: 15px;
+        }
+
+        .probability-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .probability-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .probability-fill {
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .examples {
+            margin-top: 30px;
+        }
+
+        .examples h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .example-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .example-btn {
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .example-btn:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .example-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .example-preview {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-card {
+                padding: 25px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .result-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DeepFake Text Detector</h1>
+            <p>AI Text Detection System Based on Multi-Family Scoring Matrices and Ladder Response Curves</p>
+            <div>
+                <span class="stats-badge">AUC: 0.9899</span>
+                <span class="stats-badge">Accuracy: 96%</span>
+                <span class="stats-badge">23 texts/sec</span>
+            </div>
+        </div>
+
+        <div class="main-card">
+            <div class="detection-form">
+                <div class="form-group">
+                    <label for="textInput" class="form-label">
+                        Enter text for detection (minimum 10 characters, maximum 10000 characters)
+                    </label>
+                    <textarea 
+                        id="textInput" 
+                        class="text-input" 
+                        placeholder="Enter the text you want to analyze...
+
+Examples:
+• Academic paper paragraph
+• News article content
+• Blog post excerpt
+• Creative writing passage
+
+The system will analyze linguistic features and determine whether the text was generated by AI."
+                    ></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button id="detectBtn" class="btn btn-primary">
+                        Start Detection
+                    </button>
+                    <button id="clearBtn" class="btn btn-secondary">
+                        Clear Text
+                    </button>
+                </div>
+
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <span>Analyzing with AI, please wait...</span>
+                </div>
+            </div>
+
+            <div id="result" class="result-card">
+                <div class="result-header">
+                    <div class="result-title" id="resultTitle"></div>
+                    <div class="confidence-badge" id="confidenceBadge"></div>
+                </div>
+
+                <div class="probability-bars">
+                    <div class="probability-item">
+                        <div class="probability-label">
+                            <span>AI-generated probability</span>
+                            <span id="aiProb">0%</span>
+                        </div>
+                        <div class="probability-bar">
+                            <div id="aiProbBar" class="probability-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="probability-item">
+                        <div class="probability-label">
+                            <span>Human-written probability</span>
+                            <span id="humanProb">0%</span>
+                        </div>
+                        <div class="probability-bar">
+                            <div id="humanProbBar" class="probability-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-stats">
+                    <div class="stat-item">
+                        <div id="predictionTime" class="stat-value">0ms</div>
+                        <div class="stat-label">Detection Time</div>
+                    </div>
+                    <div class="stat-item">
+                        <div id="textLength" class="stat-value">0</div>
+                        <div class="stat-label">Characters</div>
+                    </div>
+                    <div class="stat-item">
+                        <div id="wordCount" class="stat-value">0</div>
+                        <div class="stat-label">Words</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="examples">
+                <h3>Sample Texts</h3>
+                <div class="example-buttons">
+                    <div class="example-btn" data-example="human1">
+                        <div class="example-title">Human Writing Sample</div>
+                        <div class="example-preview">I think the weather is really nice today, perfect for a walk...</div>
+                    </div>
+                    <div class="example-btn" data-example="ai1">
+                        <div class="example-title">AI-generated Sample</div>
+                        <div class="example-preview">The implementation of advanced algorithms necessitates comprehensive consideration...</div>
+                    </div>
+                    <div class="example-btn" data-example="academic">
+                        <div class="example-title">Academic Text Sample</div>
+                        <div class="example-preview">Recent advances in neural network architectures have demonstrated...</div>
+                    </div>
+                    <div class="example-btn" data-example="news">
+                        <div class="example-title">News Text Sample</div>
+                        <div class="example-preview">According to recent reports, the development of artificial intelligence...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by Ladder Response Curves (LRC) and cross-family divergence analysis | Ultra-fast detection | High-accuracy recognition</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                DTD v2.0 | Random Forest Ensemble Model | 2021-dimensional Feature Vector
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 示例文本数据
+        const examples = {
+            human1: "I think the weather is really nice today, perfect for going out for a walk. Yesterday, while chatting with a friend, we talked about a movie we watched recently, and I found the plot quite interesting. Some parts were a bit far-fetched, but overall it was still worth watching.",
+            ai1: "The implementation of advanced machine learning algorithms necessitates comprehensive consideration of computational complexity factors and optimization strategies to ensure scalable deployment across distributed systems while maintaining optimal performance metrics.",
+            academic: "Recent advances in neural network architectures have demonstrated unprecedented capabilities in natural language processing tasks. The systematic analysis of attention mechanisms reveals fundamental principles that govern information flow in transformer-based models, providing insights into the theoretical foundations of deep learning methodologies.",
+            news: "According to recent reports, the development of artificial intelligence technologies has accelerated rapidly in recent years. Industry experts emphasize that the integration of AI systems requires careful consideration of ethical implications and regulatory frameworks to ensure responsible deployment across various sectors."
+        };
+
+        // DOM元素
+        const textInput = document.getElementById('textInput');
+        const detectBtn = document.getElementById('detectBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+
+        // 事件监听器
+        detectBtn.addEventListener('click', detectText);
+        clearBtn.addEventListener('click', clearText);
+
+        // 示例按钮点击事件
+        document.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const exampleKey = btn.getAttribute('data-example');
+                textInput.value = examples[exampleKey];
+                textInput.focus();
+            });
+        });
+
+        // 文本检测函数
+        async function detectText() {
+            const text = textInput.value.trim();
+            
+            if (text.length < 10) {
+                alert('Please enter at least 10 characters.');
+                return;
+            }
+
+            if (text.length > 10000) {
+                alert('Text length cannot exceed 10000 characters.');
+                return;
+            }
+
+            // 显示加载状态
+            detectBtn.disabled = true;
+            loading.style.display = 'flex';
+            result.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/detect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResult(data.result);
+                } else {
+                    alert('Detection failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('Network error: ' + error.message);
+            } finally {
+                detectBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        // 显示检测结果
+        function displayResult(data) {
+            const isAI = data.prediction === 'AI Generated';
+            
+            // 设置结果卡片样式
+            result.className = 'result-card ' + (isAI ? 'result-ai' : 'result-human');
+            result.style.display = 'block';
+
+            // 设置标题和置信度
+            document.getElementById('resultTitle').textContent = 
+                isAI ? 'AI-generated Text' : 'Human-written Text';
+            document.getElementById('confidenceBadge').textContent = 
+                `Confidence: ${(data.confidence * 100).toFixed(1)}%`;
+
+            // 设置概率条
+            const aiPercent = (data.ai_probability * 100).toFixed(1);
+            const humanPercent = (data.human_probability * 100).toFixed(1);
+
+            document.getElementById('aiProb').textContent = aiPercent + '%';
+            document.getElementById('humanProb').textContent = humanPercent + '%';
+
+            // 动画效果设置概率条宽度
+            setTimeout(() => {
+                document.getElementById('aiProbBar').style.width = aiPercent + '%';
+                document.getElementById('humanProbBar').style.width = humanPercent + '%';
+            }, 100);
+
+            // 设置统计信息
+            document.getElementById('predictionTime').textContent = 
+                data.prediction_time_ms.toFixed(1) + 'ms';
+            document.getElementById('textLength').textContent = data.text_length;
+            document.getElementById('wordCount').textContent = data.word_count;
+        }
+
+        // Clear Text
+        function clearText() {
+            textInput.value = '';
+            result.style.display = 'none';
+            textInput.focus();
+        }
+
+        // 文本输入实时字符计数
+        textInput.addEventListener('input', function() {
+            const length = this.value.length;
+            if (length > 10000) {
+                this.value = this.value.substring(0, 10000);
+            }
+        });
+    </script>
+</body>
+</html>
