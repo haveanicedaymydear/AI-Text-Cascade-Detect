@@ -1,0 +1,182 @@
+% EMNLP 2026 System Demonstration draft.
+% Compile with the official EMNLP/ACL style files.
+% Place acl.sty and acl_natbib.bst from the official template in this directory.
+% For camera/submission, verify all author, affiliation, demo, and repo links.
+
+\documentclass[11pt]{article}
+
+% Use the official EMNLP 2026 style package when available.
+% For single-blind demo submissions, author names should be visible.
+\usepackage{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{xcolor}
+
+\title{DTD-LRC: An Interpretable Two-Stage Cascade for Open-World Machine-Generated Text Detection}
+
+\author{
+Zhou Liuyuehan \\
+Coventry University \\
+\texttt{TODO@email.com}
+\And
+Mr. Zhang\thanks{Corresponding author. Full name, affiliation, and email to be confirmed before submission.} \\
+Coventry University \\
+\texttt{TODO@email.com}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Large language models can generate fluent text across many domains, making machine-generated text detection increasingly difficult in open-world settings. Existing detectors often rely on a single signal source, such as a supervised classifier or a likelihood threshold, and can become brittle when the generator, domain, or writing style shifts. We present DTD-LRC, an interpretable two-stage cascade system for open-world machine-generated text detection. The first stage, DTD, performs fast screening with TF--IDF and hand-crafted linguistic features. The second stage, MS-LRC, is invoked only for uncertain cases and measures how length-normalized negative log-likelihood changes across model families and scales. The system exposes auditable evidence through confidence-gated routing, feature importance, ladder response curves, and family-scale NLL matrices. A web prototype and API demonstrate interactive detection, while benchmark and smoke evaluations show that the system can preserve low-latency first-stage inference while providing deeper multi-model evidence for difficult cases.
+\end{abstract}
+
+\section{Introduction}
+
+Machine-generated text detection is no longer a closed-world classification problem. In practical settings, a detector may receive student essays, forum posts, news-style passages, technical documentation, and lightly edited language-model outputs from generators unseen during training. Under such conditions, detectors based on one signal source can degrade sharply: a supervised classifier may overfit dataset-specific lexical artifacts, while a single likelihood threshold can be sensitive to topic, register, and length.
+
+This paper presents \textbf{DTD-LRC}, an interpretable system demonstration for machine-generated text detection under open-world variation. The system is designed around a simple operational constraint: most user inputs should receive a fast response, but uncertain cases should not be forced through the same shallow decision path. DTD-LRC therefore combines a fast first-stage detector with a deeper second-stage ladder-response module.
+
+The demonstration contributes:
+\begin{itemize}
+    \item a confidence-gated two-stage cascade that routes only uncertain cases to the more expensive detector;
+    \item cross-family ladder response curves that compare NLL/byte patterns across model scales and families rather than relying on a single absolute likelihood threshold;
+    \item an auditable web and API prototype that exposes confidence, stage usage, feature importance, LRC curves, and family-scale matrices.
+\end{itemize}
+
+\section{System Overview}
+
+Figure~\ref{fig:workflow} summarises the system. DTD-LRC accepts plain text through a web interface or API endpoint. The input is normalized and sent to Stage 1, a lightweight detector that returns an AI probability and confidence score. If this score falls outside the uncertainty band, the system returns the Stage-1 decision directly. If it falls inside the gate band, the text is forwarded to Stage 2, where multi-model NLL/byte scoring and response-curve features provide additional evidence.
+
+\begin{figure}[t]
+\centering
+\fbox{
+\begin{minipage}{0.92\linewidth}
+\small
+\textbf{Input text} $\rightarrow$ preprocessing $\rightarrow$ \textbf{Stage 1: DTD} \\
+\quad TF--IDF + linguistic features $\rightarrow$ Random Forest $\rightarrow p_1$ \\
+\quad if $p_1 \notin [0.41, 0.61]$: return Stage-1 output \\
+\quad if $p_1 \in [0.41, 0.61]$: invoke \textbf{Stage 2: MS-LRC} \\
+\quad Qwen family/scale NLL matrix $\rightarrow$ curve features $\rightarrow p_2$ \\
+\textbf{Final output}: label, probability, stage used, and evidence artifacts.
+\end{minipage}}
+\caption{DTD-LRC confidence-gated cascade workflow.}
+\label{fig:workflow}
+\end{figure}
+
+The implementation contains three layers: data and text preprocessing, detection modules, and delivery interfaces. The original system was tested through local execution, Kaggle smoke runs, and a Flask web application. The web API exposes health and detection endpoints, while the front end displays the predicted label, probabilities, runtime, and diagnostic information.
+
+\section{Detection Pipeline}
+
+\subsection{Stage 1: DTD}
+
+DTD is a supervised feature-based detector. It concatenates a TF--IDF representation with hand-crafted linguistic features, including lexical diversity, sentence-length statistics, punctuation density, repetition indicators, and structural/style markers. The resulting feature vector is passed to a Random Forest classifier, which outputs an AI probability:
+\[
+p_1 = P_{\mathrm{DTD}}(\mathrm{AI}\mid x).
+\]
+The maximum of $p_1$ and $1-p_1$ is treated as the first-stage confidence. This design makes Stage 1 fast enough for interactive use and gives the system a natural routing signal.
+
+\subsection{Stage 2: MS-LRC}
+
+MS-LRC treats language models as measurement instruments. For each input text $x$ and language model $M$, it computes length-normalized negative log-likelihood:
+\[
+s(x;M)=\frac{-\sum_{t=2}^{T}\log p_M(x_t\mid x_{<t})}{|\mathrm{bytes}(x)|}.
+\]
+The system evaluates each text across three model scales and three Qwen families: base, instruct, and coder. Instead of using any single NLL value as a threshold, MS-LRC extracts response-curve features from each scale ladder:
+\[
+\Delta_{\mathrm{early}}=s_{\mathrm{small}}-s_{\mathrm{mid}}, \quad
+\Delta_{\mathrm{late}}=s_{\mathrm{mid}}-s_{\mathrm{large}},
+\]
+\[
+\Delta_{\mathrm{overall}}=s_{\mathrm{small}}-s_{\mathrm{large}}, \quad
+r=\frac{\Delta_{\mathrm{early}}}{\Delta_{\mathrm{late}}+\epsilon}.
+\]
+These features encode where predictability changes most strongly as evaluator model capacity increases. They are combined across model families to produce the second-stage probability $p_2$.
+
+\subsection{Confidence-Gated Routing}
+
+The cascade uses the band $[0.41, 0.61]$ as its initial uncertainty gate. Stage 2 is only invoked when the Stage-1 probability lies within this interval:
+\[
+\mathrm{route}(x)=
+\begin{cases}
+\mathrm{DTD}, & p_1 \notin [0.41,0.61],\\
+\mathrm{MS\mbox{-}LRC}, & p_1 \in [0.41,0.61].
+\end{cases}
+\]
+This design preserves low-latency inference for high-confidence inputs while reserving more expensive multi-model scoring for cases where the shallow detector is uncertain.
+
+\section{Demonstration Interface}
+
+The demonstration includes a browser-based interface and JSON API. Users paste a passage into the text box, run detection, and receive a label, confidence score, AI probability, human probability, text length, word count, and runtime. The system also supports preloaded examples covering human writing, AI-generated writing, academic text, and news-style text.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/web_interface.png}
+\caption{Web interface for interactive machine-generated text detection.}
+\label{fig:web}
+\end{figure}
+
+For auditable analysis, the system can display or save intermediate evidence. Stage 1 exposes feature families and feature-importance summaries. Stage 2 produces ladder response curves and family-scale NLL/byte matrices, allowing users to inspect whether the final decision was driven by surface features or multi-model predictability patterns.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/lrc_summary.png}
+\caption{Example ladder response curves comparing human and AI summaries across Qwen model families and scales.}
+\label{fig:lrc}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{figures/nll_matrix.png}
+\caption{Family-scale NLL/byte matrix used as interpretable Stage-2 evidence.}
+\label{fig:matrix}
+\end{figure}
+
+\section{Evaluation}
+
+The evaluation focuses on system validity rather than only leaderboard-style comparison. The first-stage DTD detector was evaluated on a benchmark setting and reached AUC 0.9899, F1 0.96, precision 0.96, recall 0.96, and average latency of 38 ms per prediction. The second-stage MS-LRC smoke evaluation used a grouped 60-sample setting and achieved AUC 0.9622, accuracy 0.9333, F1 0.9375, AI-class precision 0.8824, and AI-class recall 1.0000. In a cascade smoke run, 31 of 120 examples were routed to Stage 2, corresponding to approximately 25.8\% Stage-2 usage.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llr}
+\toprule
+Component & Metric & Value \\
+\midrule
+DTD & AUC & 0.9899 \\
+DTD & F1 & 0.96 \\
+DTD & Precision / Recall & 0.96 / 0.96 \\
+DTD & Avg. latency & 38 ms \\
+Gate & Uncertainty band & [0.41, 0.61] \\
+MS-LRC & AUC & 0.9622 \\
+MS-LRC & Accuracy & 0.9333 \\
+MS-LRC & F1 & 0.9375 \\
+Cascade & Stage-2 usage & 31 / 120 \\
+\bottomrule
+\end{tabular}
+\caption{Headline evaluation metrics used in the system demonstration.}
+\label{tab:metrics}
+\end{table}
+
+The system was also tested through unit, integration, and API checks. The Stage-1 model was verified to load and run fast prediction; the Stage-2 scoring pipeline was verified to generate feature files; the integration test confirmed that only probabilities inside the gate band were routed to Stage 2; and the web API was checked for valid JSON responses through health and detection endpoints.
+
+\paragraph{Comparison with existing systems.}
+DTD-LRC differs from single-threshold likelihood detectors such as DetectGPT-style methods by exposing a confidence-gated, multi-evidence workflow. It differs from purely supervised classifiers by adding a second-stage likelihood-shape view for difficult cases. It also differs from black-box commercial detectors by returning auditable intermediate artifacts rather than only a document-level score. In the submitted version, we avoid claiming direct numerical superiority over systems that were not rerun under identical conditions; instead, the demonstration emphasizes system design, auditability, and reproducible internal evaluation.
+
+\section{Limitations, Ethics, and Conclusion}
+
+DTD-LRC should not be used as a sole basis for punitive academic or moderation decisions. Machine-generated text detection is probabilistic, and false positives can occur, especially for short, formulaic, multilingual, highly edited, or stylistically unusual human writing. The full MS-LRC stage is also computationally more expensive than the DTD stage because it requires multiple language-model evaluations. The live demo therefore provides a lightweight interactive mode, while the installable package supports fuller local execution with cached models.
+
+This paper presented DTD-LRC, a two-stage system demonstration for interpretable open-world machine-generated text detection. The central design principle is to keep easy cases fast while reserving deeper cross-family ladder evidence for uncertain inputs. The system combines web interaction, API access, cascade routing, and visual diagnostic artifacts, making it suitable for demonstration and further research on auditable AI-text detection.
+
+% Limitations and broader impact can be expanded in the optional unlimited ethics/broader impact section if needed.
+
+\bibliographystyle{acl_natbib}
+\bibliography{references}
+
+\end{document}
