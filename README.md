@@ -1,133 +1,189 @@
-# Detecting Machine-Generated Text in the Wild with a Two-Stage Cascade (DTD → LRC)
+# DTD-LRC: Interpretable Two-Stage AI-Text Detection
 
-A final year project on **open-world AI-generated text detection**.  
-This repository implements a practical two-stage cascade for detecting machine-generated text under changing domains, model families, and writing styles.
+This repository contains the demonstration system for **DTD-LRC: An Interpretable Two-Stage Cascade for Open-World Machine-Generated Text Detection**.
 
-The core idea is simple:
+DTD-LRC is designed for practical machine-generated text detection under changing domains, generators, and writing styles. Instead of relying on a single detector score, it combines a fast first-stage detector with a deeper second-stage ladder-response module for uncertain cases.
 
-- **Stage 1 (DTD)** handles most inputs quickly using lightweight statistical and linguistic evidence.
-- **Stage 2 (LRC)** is only triggered for uncertain cases and performs deeper analysis using multi-model response patterns.
+## System Idea
 
-This design aims to balance **speed, robustness, and interpretability** for real-world use.
+The system uses a confidence-gated cascade:
 
----
+```text
+Input text
+   │
+   ▼
+Stage 1: DTD
+   ├─ TF-IDF features
+   ├─ lexical, syntactic, punctuation, repetition, and structural/style features
+   └─ fast classifier → AI probability p1
+   │
+   ├─ if p1 is outside [0.41, 0.61] → return Stage-1 decision
+   │
+   └─ if p1 is inside  [0.41, 0.61] → invoke Stage 2
+          │
+          ▼
+Stage 2: MS-LRC
+   ├─ NLL/byte scoring across model families and scales
+   ├─ ladder response curve features
+   ├─ family-scale response matrix
+   └─ second-stage decision + interpretable evidence
+```
 
-## Overview
+## Components
 
-Traditional AI-text detectors often fail when the generator, domain, or writing style changes.  
-A single detector may perform well on one benchmark but become brittle when exposed to paraphrased text, platform text, student writing, or outputs from newer models.
+### Stage 1: DTD
 
-This project addresses that problem with a **two-stage cascade**:
+DTD is a lightweight first-stage detector. It uses:
 
-1. **DTD (Document/Text Detector)**  
-   A lightweight first-stage detector based on:
-   - TF-IDF features
-   - lexical features
-   - syntactic features
-   - punctuation features
-   - repetition features
-   - structural / style indicators  
-   These features are combined and passed into a traditional classifier to produce:
-   - AI probability
-   - label prediction
-   - confidence score
+- TF-IDF vectors
+- lexical features
+- sentence-structure features
+- punctuation patterns
+- repetition indicators
+- structural and style markers
 
-2. **LRC (Ladder Response Curve Detector)**  
-   A second-stage detector used only when Stage 1 is uncertain.  
-   It measures how the **normalised negative log-likelihood (NLL/byte)** changes across multiple model scales and families, then extracts low-dimensional curve features such as:
-   - early drop
-   - late drop
-   - overall drop
-   - drop ratio
-   - concavity / shape indicators
+These features are concatenated into a feature vector and passed to a fast classifier that returns:
 
-The system routes a text to Stage 2 only when the Stage 1 confidence falls inside a gate band of **[0.41, 0.61]**. This preserves throughput while reserving expensive computation for hard cases.
+- predicted label
+- AI probability
+- human probability
+- confidence score
+- runtime
 
----
+### Stage 2: MS-LRC
 
-## Why This Project Matters
+MS-LRC is invoked only for uncertain cases. It treats language models as measurement instruments and computes length-normalized negative log-likelihood (`NLL/byte`) across multiple scales and families.
 
-This project was designed for **practical deployment**, not just benchmark fitting.
-
-It focuses on three goals:
-
-- **Accuracy**: maintain strong detection performance under open-world variation
-- **Efficiency**: avoid running expensive multi-model analysis on every sample
-- **Interpretability**: expose evidence such as feature importance, confidence band behaviour, LRC curves, and family-scale response matrices
-
-Instead of relying on one fragile signal, the system combines multiple evidence sources and degrades more gracefully when shallow features become unreliable.
-
----
-
-## Method
-
-### Stage 1 — DTD
-
-The first stage is a lightweight detector using:
-
-- **TF-IDF** vectors
-- **lexical features**  
-  e.g. average word length, long-word ratio, vocabulary diversity
-- **syntactic features**  
-  e.g. sentence length statistics
-- **punctuation features**
-- **repetition features**
-- **structural/style features**  
-  e.g. paragraph statistics, character variety, academic-style markers
-
-These features are concatenated and sent to a traditional classifier for a fast first decision.
-
-### Stage 2 — LRC
-
-The second stage treats language models as **measurement instruments**.
-
-For the same text, the system computes **NLL/byte** across multiple model scales and families, then examines the resulting response pattern.  
-Rather than using a raw absolute score, it extracts shape-based evidence such as:
+The current research prototype uses Qwen-style scale ladders and extracts features such as:
 
 - early drop
 - late drop
 - overall drop
 - drop ratio
 - concavity flag
+- cross-family spread
 
-This stage is intended to capture cross-family behaviour that shallow stylistic features may miss.
+The goal is not to rely on a single perplexity threshold, but to inspect how predictability changes across model capacity and family variants.
 
-### Cascade Routing
+## Demonstration Modes
 
-The routing rule is:
+For reviewer-facing demonstration, the recommended deployment strategy is:
 
-- if Stage 1 confidence is **outside** `[0.41, 0.61]` → return Stage 1 result directly
-- if Stage 1 confidence is **inside** `[0.41, 0.61]` → send the text to Stage 2
+1. **Lightweight online demo**  
+   Runs the interactive front end and fast DTD detection reliably.
 
-This keeps the system fast on easy cases and more careful on uncertain ones.
+2. **Precomputed MS-LRC examples**  
+   Shows ladder response curves and family-scale NLL matrices for selected examples.
 
----
+3. **Full installable pipeline**  
+   Allows local execution of the complete MS-LRC scoring workflow when model cache and hardware are available.
 
-## System Architecture
+This design avoids forcing a public web demo to load multiple large language models while still keeping the full pipeline reproducible.
+
+## Evaluation Summary
+
+Headline metrics from the current project report:
+
+| Component | Metric | Value |
+|---|---:|---:|
+| Stage 1 DTD | AUC | 0.9899 |
+| Stage 1 DTD | F1 | 0.96 |
+| Stage 1 DTD | Precision / Recall | 0.96 / 0.96 |
+| Stage 1 DTD | Average latency | 38 ms |
+| Gate | Stage-2 routing band | [0.41, 0.61] |
+| Stage 2 MS-LRC smoke | AUC | 0.9622 |
+| Stage 2 MS-LRC smoke | Accuracy | 0.9333 |
+| Stage 2 MS-LRC smoke | F1 | 0.9375 |
+| Cascade smoke | Stage-2 usage | 31 / 120 |
+
+These results are intended as internal system validation for the demonstration paper. Direct numerical comparison with external detectors should only be reported if all baselines are rerun under the same data and evaluation protocol.
+
+## Quick Start
+
+> The exact command may need to be adjusted to match the local project entry point.
+
+```bash
+git clone https://github.com/haveanicedaymydear/AI-Text-Cascade-Detect.git
+cd AI-Text-Cascade-Detect
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
+
+Then open:
 
 ```text
-Input Text
-   │
-   ▼
-Preprocessing / Cleaning / Normalisation
-   │
-   ▼
-Stage 1: DTD
-   ├─ TF-IDF features
-   ├─ linguistic & stylistic features
-   ├─ traditional classifier
-   └─ AI probability + confidence
-   │
-   ├─ if confidence outside [0.41, 0.61] ──► Final Output
-   │
-   └─ if confidence inside [0.41, 0.61]
-          │
-          ▼
-Stage 2: LRC
-   ├─ multi-model NLL/byte scoring
-   ├─ ladder response curve feature extraction
-   ├─ calibrated second-stage classification
-   └─ interpretable evidence artefacts
-          │
-          ▼
-Final Output
+http://127.0.0.1:5000
+```
+
+## API
+
+Expected endpoints in the demonstration prototype:
+
+```text
+GET  /api/health
+POST /api/detect
+```
+
+Example detection request:
+
+```bash
+curl -X POST http://127.0.0.1:5000/api/detect \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Paste a paragraph here for detection."}'
+```
+
+Expected response fields include:
+
+```json
+{
+  "label": "Human-written Text or AI-generated Text",
+  "ai_probability": 0.32,
+  "human_probability": 0.68,
+  "runtime_ms": 44.5,
+  "stage_used": "DTD or MS-LRC"
+}
+```
+
+## Reviewer Checklist
+
+Before submission, the repository should contain:
+
+- [ ] stable online demo link or installable package
+- [ ] demo video link
+- [ ] `requirements.txt`
+- [ ] clear run command
+- [ ] example inputs and outputs
+- [ ] screenshots
+- [ ] evaluation result files or reproduction scripts
+- [ ] license
+- [ ] limitations and ethical-use statement
+
+## Limitations and Ethical Use
+
+DTD-LRC is a probabilistic aid, not an authority. It should not be used as the sole basis for punitive academic or moderation decisions.
+
+Known limitations include:
+
+- false positives on short, formulaic, creative, or stylistically unusual human writing
+- sensitivity to domain and generator shift
+- high compute cost for the full MS-LRC 3-by-3 ladder
+- possible calibration shift under unseen distributions
+
+The recommended use is evidence-assisted review: the system should surface uncertainty and diagnostic evidence rather than replace human judgment.
+
+## Paper Draft
+
+A working EMNLP System Demonstration draft is placed under:
+
+```text
+paper/emnlp_demo_draft.tex
+paper/references.bib
+```
+
+The draft assumes the official EMNLP/ACL style files are added before compilation.
+
+## Citation
+
+Citation information will be added after submission.
