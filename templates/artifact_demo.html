@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DTD-LRC Demo</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #1f2933;
+            --muted: #5b6673;
+            --line: #d8dee6;
+            --panel: #ffffff;
+            --band: #f5f7fa;
+            --accent: #2563eb;
+            --human: #087f5b;
+            --ai: #b42318;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            color: var(--ink);
+            background: var(--band);
+        }
+        header {
+            background: #17202a;
+            color: #ffffff;
+            padding: 24px;
+            border-bottom: 4px solid var(--accent);
+        }
+        header h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+            letter-spacing: 0;
+        }
+        header p {
+            margin: 0;
+            max-width: 900px;
+            color: #dce3ea;
+            line-height: 1.45;
+        }
+        main {
+            width: min(1120px, calc(100% - 32px));
+            margin: 24px auto 40px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+            gap: 20px;
+        }
+        section, aside {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 18px;
+        }
+        h2 {
+            margin: 0 0 14px;
+            font-size: 18px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 210px;
+            resize: vertical;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 15px;
+            line-height: 1.45;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 12px;
+        }
+        button {
+            min-height: 38px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: #ffffff;
+            color: var(--ink);
+            padding: 0 14px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        button.primary {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #ffffff;
+        }
+        button:disabled {
+            cursor: wait;
+            opacity: 0.65;
+        }
+        .result {
+            display: none;
+            margin-top: 16px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .result-head {
+            padding: 14px;
+            background: #edf2f7;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .result-head.ai { background: #fff1f0; color: var(--ai); }
+        .result-head.human { background: #eafaf2; color: var(--human); }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1px;
+            background: var(--line);
+        }
+        .metric {
+            background: #ffffff;
+            padding: 12px;
+        }
+        .metric strong {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .metric span, .small {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .notice {
+            margin-top: 14px;
+            padding: 12px;
+            border-left: 4px solid #d97706;
+            background: #fff7ed;
+            color: #5f370e;
+            line-height: 1.45;
+        }
+        .example-list {
+            display: grid;
+            gap: 10px;
+        }
+        .example-list button {
+            width: 100%;
+            text-align: left;
+            padding: 10px;
+            height: auto;
+            line-height: 1.35;
+        }
+        pre {
+            white-space: pre-wrap;
+            overflow: auto;
+            background: #101820;
+            color: #e5edf5;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        @media (max-width: 820px) {
+            .grid { grid-template-columns: 1fr; }
+            .metrics { grid-template-columns: 1fr; }
+            header h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>DTD-LRC: Open-World Machine-Generated Text Detection</h1>
+        <p>Reviewer artifact demo for the EMNLP System Demonstration submission. The web demo runs the fast DTD stage interactively and exposes MS-LRC evidence through precomputed examples.</p>
+    </header>
+    <main class="grid">
+        <section>
+            <h2>Interactive DTD Detection</h2>
+            <textarea id="textInput" aria-label="Text to analyze"></textarea>
+            <div class="row">
+                <button class="primary" id="detectBtn">Run Detection</button>
+                <button id="clearBtn">Clear</button>
+            </div>
+            <div id="result" class="result">
+                <div id="resultHead" class="result-head">
+                    <strong id="prediction">-</strong>
+                    <span id="stage">-</span>
+                </div>
+                <div class="metrics">
+                    <div class="metric"><strong id="aiProbability">0%</strong><span>AI probability</span></div>
+                    <div class="metric"><strong id="confidence">0%</strong><span>Confidence</span></div>
+                    <div class="metric"><strong id="timeMs">0 ms</strong><span>Runtime</span></div>
+                </div>
+            </div>
+            <div class="notice">
+                Detector outputs are probabilistic evidence. They should not be used as the sole basis for punitive academic, employment, or moderation decisions.
+            </div>
+        </section>
+        <aside>
+            <h2>Example Inputs</h2>
+            <div class="example-list">
+                {% for key, text in examples.items() %}
+                <button data-text="{{ text|e }}">{{ key.replace('_', ' ') }}<br><span class="small">{{ text[:120] }}...</span></button>
+                {% endfor %}
+            </div>
+            <h2 style="margin-top: 20px;">Precomputed MS-LRC Evidence</h2>
+            <button id="loadEvidenceBtn">Load Evidence JSON</button>
+            <pre id="evidenceBox">Click to load the stored ladder response and family-scale evidence examples.</pre>
+        </aside>
+    </main>
+    <script>
+        const textInput = document.getElementById("textInput");
+        const detectBtn = document.getElementById("detectBtn");
+        const clearBtn = document.getElementById("clearBtn");
+        const result = document.getElementById("result");
+        const resultHead = document.getElementById("resultHead");
+
+        document.querySelectorAll("[data-text]").forEach((button) => {
+            button.addEventListener("click", () => {
+                textInput.value = button.getAttribute("data-text");
+                textInput.focus();
+            });
+        });
+
+        clearBtn.addEventListener("click", () => {
+            textInput.value = "";
+            result.style.display = "none";
+        });
+
+        detectBtn.addEventListener("click", async () => {
+            const text = textInput.value.trim();
+            if (text.length < 10) {
+                alert("Please enter at least 10 characters.");
+                return;
+            }
+            detectBtn.disabled = true;
+            try {
+                const response = await fetch("/api/detect", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text })
+                });
+                const payload = await response.json();
+                if (!payload.success) {
+                    alert(payload.error || "Detection failed.");
+                    return;
+                }
+                const data = payload.result;
+                const isAi = data.prediction.toLowerCase().includes("ai");
+                resultHead.className = "result-head " + (isAi ? "ai" : "human");
+                document.getElementById("prediction").textContent = data.prediction;
+                document.getElementById("stage").textContent = data.stage_used;
+                document.getElementById("aiProbability").textContent = (data.ai_probability * 100).toFixed(1) + "%";
+                document.getElementById("confidence").textContent = (data.confidence * 100).toFixed(1) + "%";
+                document.getElementById("timeMs").textContent = data.prediction_time_ms.toFixed(1) + " ms";
+                result.style.display = "block";
+            } finally {
+                detectBtn.disabled = false;
+            }
+        });
+
+        document.getElementById("loadEvidenceBtn").addEventListener("click", async () => {
+            const response = await fetch("/api/mslrc_examples");
+            const payload = await response.json();
+            document.getElementById("evidenceBox").textContent = JSON.stringify(payload, null, 2);
+        });
+
+        const firstExample = document.querySelector("[data-text]");
+        if (firstExample) {
+            textInput.value = firstExample.getAttribute("data-text");
+        }
+    </script>
+</body>
+</html>

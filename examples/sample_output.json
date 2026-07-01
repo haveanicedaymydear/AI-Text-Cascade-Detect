@@ -1,0 +1,22 @@
+{
+  "artifact_notice": "Detector scores are probabilistic evidence. Do not use them as the sole basis for punitive academic, employment, or moderation decisions.",
+  "result": {
+    "ai_probability": 0.5401541143717332,
+    "confidence": 0.5401541143717332,
+    "human_probability": 0.4598458856282668,
+    "interactive_stage": "DTD",
+    "is_uncertain": true,
+    "ms_lrc_mode": "precomputed_examples",
+    "prediction": "AI Generated",
+    "prediction_time_ms": 49.73769187927246,
+    "stage_used": "DTD (uncertain; see precomputed MS-LRC examples)",
+    "text_length": 162,
+    "uncertainty_band": [
+      0.41,
+      0.61
+    ],
+    "word_count": 29
+  },
+  "success": true,
+  "timestamp": 1782886794.9826505
+}

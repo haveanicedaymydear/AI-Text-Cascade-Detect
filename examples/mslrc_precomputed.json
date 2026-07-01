@@ -1,0 +1,68 @@
+{
+  "description": "Precomputed MS-LRC evidence examples for the lightweight online demo. Values are representative artifact evidence and avoid loading transformer models at web startup.",
+  "examples": [
+    {
+      "id": "human_sample",
+      "label": "Human Written",
+      "dtd_ai_probability": 0.48,
+      "ms_lrc_ai_probability": 0.24,
+      "stage_used": "precomputed MS-LRC",
+      "ladder_response_curve": {
+        "small_nll_per_byte": 1.92,
+        "medium_nll_per_byte": 1.81,
+        "large_nll_per_byte": 1.75,
+        "early_drop": 0.11,
+        "late_drop": 0.06,
+        "overall_drop": 0.17
+      },
+      "family_scale_matrix": [
+        [1.92, 1.81, 1.75],
+        [1.98, 1.88, 1.83],
+        [2.05, 1.96, 1.90]
+      ],
+      "interpretation": "The response curve improves gradually rather than collapsing at larger model scales. The short input also illustrates why detector confidence should be treated cautiously."
+    },
+    {
+      "id": "ai_sample",
+      "label": "AI Generated",
+      "dtd_ai_probability": 0.54,
+      "ms_lrc_ai_probability": 0.91,
+      "stage_used": "precomputed MS-LRC",
+      "ladder_response_curve": {
+        "small_nll_per_byte": 1.74,
+        "medium_nll_per_byte": 1.45,
+        "large_nll_per_byte": 1.31,
+        "early_drop": 0.29,
+        "late_drop": 0.14,
+        "overall_drop": 0.43
+      },
+      "family_scale_matrix": [
+        [1.74, 1.45, 1.31],
+        [1.70, 1.43, 1.29],
+        [1.78, 1.49, 1.34]
+      ],
+      "interpretation": "The larger evaluator models assign lower normalized NLL, producing a steeper ladder response associated with generic generated-style text."
+    },
+    {
+      "id": "uncertain_sample",
+      "label": "Uncertain",
+      "dtd_ai_probability": 0.49,
+      "ms_lrc_ai_probability": 0.57,
+      "stage_used": "precomputed MS-LRC",
+      "ladder_response_curve": {
+        "small_nll_per_byte": 1.86,
+        "medium_nll_per_byte": 1.69,
+        "large_nll_per_byte": 1.60,
+        "early_drop": 0.17,
+        "late_drop": 0.09,
+        "overall_drop": 0.26
+      },
+      "family_scale_matrix": [
+        [1.86, 1.69, 1.60],
+        [1.91, 1.73, 1.65],
+        [1.88, 1.72, 1.66]
+      ],
+      "interpretation": "The DTD probability falls inside the routing band, so the full local pipeline would inspect MS-LRC evidence before treating the result as actionable."
+    }
+  ]
+}
