@@ -1,0 +1,5 @@
+flask>=3.0,<4
+flask-cors>=4.0,<7
+gunicorn>=22.0,<24
+numpy>=1.26,<3
+scikit-learn>=1.4,<2

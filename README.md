@@ -1,84 +1,191 @@
 # DTD-LRC: Interpretable Two-Stage AI-Text Detection
 
-This repository contains the demonstration system for **DTD-LRC: An Interpretable Two-Stage Cascade for Open-World Machine-Generated Text Detection**.
+This repository contains the demonstration artifact for **"DTD-LRC: An Interpretable Two-Stage Cascade for Open-World Machine-Generated Text Detection"**.
 
-DTD-LRC is designed for practical machine-generated text detection under changing domains, generators, and writing styles. Instead of relying on a single detector score, it combines a fast first-stage detector with a deeper second-stage ladder-response module for uncertain cases.
+DTD-LRC combines a fast first-stage detector, **DTD**, with a deeper second-stage evidence module, **MS-LRC**, for cases where the first-stage confidence falls in an uncertainty band. The reviewer-facing web demo is intentionally lightweight: it runs DTD interactively and shows MS-LRC evidence through precomputed examples. The full local MS-LRC pipeline remains available for machines with transformer dependencies and model cache.
+
+## Actual Application Entry Points
+
+The original Flask application in this repository is:
+
+```text
+src/web_app.py
+```
+
+It serves the lightweight DTD web/API demo on port `5000`.
+
+For the EMNLP artifact and Hugging Face Spaces deployment, this branch adds a root entry point:
+
+```text
+app.py
+```
+
+Use `app.py` for reviewer demos and Spaces. It loads `models/optimized_dtd_model.pkl` when available, runs DTD online, exposes `/api/detect`, and exposes precomputed MS-LRC evidence through `/api/mslrc_examples`.
+
+## Quick Start
+
+```bash
+git clone https://github.com/haveanicedaymydear/AI-Text-Cascade-Detect.git
+cd AI-Text-Cascade-Detect
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+
+Windows PowerShell activation:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Expected local URL:
+
+```text
+http://127.0.0.1:5000
+```
+
+The original lightweight app can also be started with:
+
+```bash
+python src/web_app.py
+```
+
+That command also serves `http://127.0.0.1:5000`.
+
+## API Examples
+
+Health check:
+
+```bash
+curl http://127.0.0.1:5000/api/health
+```
+
+Single detection:
+
+```bash
+curl -X POST http://127.0.0.1:5000/api/detect \
+  -H "Content-Type: application/json" \
+  -d '{"text": "The implementation of artificial intelligence systems requires comprehensive evaluation of data quality and reliability."}'
+```
+
+Precomputed MS-LRC examples:
+
+```bash
+curl http://127.0.0.1:5000/api/mslrc_examples
+curl http://127.0.0.1:5000/api/mslrc_examples?id=uncertain_sample
+```
+
+Example output fields:
+
+```json
+{
+  "success": true,
+  "result": {
+    "prediction": "AI Generated",
+    "ai_probability": 0.5401541143717332,
+    "human_probability": 0.4598458856282668,
+    "confidence": 0.5401541143717332,
+    "prediction_time_ms": 34.3,
+    "stage_used": "DTD (uncertain; see precomputed MS-LRC examples)",
+    "interactive_stage": "DTD",
+    "ms_lrc_mode": "precomputed_examples",
+    "uncertainty_band": [0.41, 0.61],
+    "is_uncertain": true
+  }
+}
+```
+
+More examples are stored in:
+
+```text
+examples/human_sample.txt
+examples/ai_sample.txt
+examples/uncertain_sample.txt
+examples/sample_output.json
+examples/mslrc_precomputed.json
+```
+
+## Dependency Sets
+
+Lightweight web demo:
+
+```bash
+pip install -r requirements.txt
+```
+
+This installs Flask, CORS support, NumPy, scikit-learn, and Gunicorn for deployment. It does not install transformer runtimes.
+
+Full local MS-LRC / benchmark pipeline:
+
+```bash
+pip install -r requirements-full.txt
+```
+
+This adds `torch`, `transformers`, `accelerate`, and plotting/data-analysis libraries. Use this only when running the full local cascade or benchmark scripts.
+
+## Demo Modes
+
+1. **Online / reviewer demo**
+   - Command: `python app.py`
+   - Runs interactive DTD detection.
+   - Shows MS-LRC evidence cards from `examples/mslrc_precomputed.json`, with raw JSON available in the interface.
+   - Avoids loading transformer models during web startup.
+
+2. **Original DTD Flask demo**
+   - Command: `python src/web_app.py`
+   - Runs the original trained DTD model on port `5000`.
+
+3. **Full local cascade**
+   - Install: `pip install -r requirements-full.txt`
+   - Command: `python src/cascade_demo_app.py`
+   - Default URL: `http://127.0.0.1:5001`
+   - Requires transformer model downloads/cache and more memory than the lightweight demo.
+
+## Hugging Face Spaces Deployment
+
+This branch includes a Docker-based Space configuration:
+
+```text
+Dockerfile
+requirements.txt
+app.py
+templates/artifact_demo.html
+examples/
+```
+
+Create a Hugging Face Space with SDK `Docker`, point it at this repository/branch, and use the included `Dockerfile`. The container sets `PORT=7860`, while local execution defaults to `PORT=5000`.
+
+If deploying manually, the Space should run:
+
+```bash
+python app.py
+```
 
 ## System Idea
 
-The system uses a confidence-gated cascade:
-
 ```text
 Input text
-   │
-   ▼
+  |
+  v
 Stage 1: DTD
-   ├─ TF-IDF features
-   ├─ lexical, syntactic, punctuation, repetition, and structural/style features
-   └─ fast classifier → AI probability p1
-   │
-   ├─ if p1 is outside [0.41, 0.61] → return Stage-1 decision
-   │
-   └─ if p1 is inside  [0.41, 0.61] → invoke Stage 2
-          │
-          ▼
+  - TF-IDF features
+  - lexical, syntactic, punctuation, repetition, and style features
+  - fast classifier -> AI probability p1
+  |
+  | if p1 is outside [0.41, 0.61]
+  v
+Return Stage-1 decision
+
+If p1 is inside [0.41, 0.61]:
+  |
+  v
 Stage 2: MS-LRC
-   ├─ NLL/byte scoring across model families and scales
-   ├─ ladder response curve features
-   ├─ family-scale response matrix
-   └─ second-stage decision + interpretable evidence
+  - NLL/byte scoring across model families and scales
+  - ladder response curve features
+  - family-scale response matrix
+  - second-stage decision plus interpretable evidence
 ```
-
-## Components
-
-### Stage 1: DTD
-
-DTD is a lightweight first-stage detector. It uses:
-
-- TF-IDF vectors
-- lexical features
-- sentence-structure features
-- punctuation patterns
-- repetition indicators
-- structural and style markers
-
-These features are concatenated into a feature vector and passed to a fast classifier that returns:
-
-- predicted label
-- AI probability
-- human probability
-- confidence score
-- runtime
-
-### Stage 2: MS-LRC
-
-MS-LRC is invoked only for uncertain cases. It treats language models as measurement instruments and computes length-normalized negative log-likelihood (`NLL/byte`) across multiple scales and families.
-
-The current research prototype uses Qwen-style scale ladders and extracts features such as:
-
-- early drop
-- late drop
-- overall drop
-- drop ratio
-- concavity flag
-- cross-family spread
-
-The goal is not to rely on a single perplexity threshold, but to inspect how predictability changes across model capacity and family variants.
-
-## Demonstration Modes
-
-For reviewer-facing demonstration, the recommended deployment strategy is:
-
-1. **Lightweight online demo**  
-   Runs the interactive front end and fast DTD detection reliably.
-
-2. **Precomputed MS-LRC examples**  
-   Shows ladder response curves and family-scale NLL matrices for selected examples.
-
-3. **Full installable pipeline**  
-   Allows local execution of the complete MS-LRC scoring workflow when model cache and hardware are available.
-
-This design avoids forcing a public web demo to load multiple large language models while still keeping the full pipeline reproducible.
 
 ## Evaluation Summary
 
@@ -96,93 +203,44 @@ Headline metrics from the current project report:
 | Stage 2 MS-LRC smoke | F1 | 0.9375 |
 | Cascade smoke | Stage-2 usage | 31 / 120 |
 
-These results are intended as internal system validation for the demonstration paper. Direct numerical comparison with external detectors should only be reported if all baselines are rerun under the same data and evaluation protocol.
-
-## Quick Start
-
-> The exact command may need to be adjusted to match the local project entry point.
-
-```bash
-git clone https://github.com/haveanicedaymydear/AI-Text-Cascade-Detect.git
-cd AI-Text-Cascade-Detect
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
-```
-
-Then open:
-
-```text
-http://127.0.0.1:5000
-```
-
-## API
-
-Expected endpoints in the demonstration prototype:
-
-```text
-GET  /api/health
-POST /api/detect
-```
-
-Example detection request:
-
-```bash
-curl -X POST http://127.0.0.1:5000/api/detect \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Paste a paragraph here for detection."}'
-```
-
-Expected response fields include:
-
-```json
-{
-  "label": "Human-written Text or AI-generated Text",
-  "ai_probability": 0.32,
-  "human_probability": 0.68,
-  "runtime_ms": 44.5,
-  "stage_used": "DTD or MS-LRC"
-}
-```
-
-## Reviewer Checklist
-
-Before submission, the repository should contain:
-
-- [ ] stable online demo link or installable package
-- [ ] demo video link
-- [ ] `requirements.txt`
-- [ ] clear run command
-- [ ] example inputs and outputs
-- [ ] screenshots
-- [ ] evaluation result files or reproduction scripts
-- [ ] license
-- [ ] limitations and ethical-use statement
+These results are internal system-validation results for the demonstration artifact. Direct numerical comparison with external detectors should only be reported when all baselines are rerun under the same data and evaluation protocol.
 
 ## Limitations and Ethical Use
 
-DTD-LRC is a probabilistic aid, not an authority. It should not be used as the sole basis for punitive academic or moderation decisions.
+DTD-LRC is a probabilistic aid, not an authority. It should not be used as the sole basis for punitive academic, employment, or moderation decisions.
 
 Known limitations include:
 
-- false positives on short, formulaic, creative, or stylistically unusual human writing
-- sensitivity to domain and generator shift
-- high compute cost for the full MS-LRC 3-by-3 ladder
-- possible calibration shift under unseen distributions
+- false positives on short, formulaic, translated, heavily edited, creative, or stylistically unusual human writing
+- sensitivity to domain shift and generator shift
+- calibration drift under unseen distributions
+- reduced reliability on multilingual or code-mixed text unless separately evaluated
+- high compute cost for full MS-LRC because it requires multiple language-model evaluations
 
-The recommended use is evidence-assisted review: the system should surface uncertainty and diagnostic evidence rather than replace human judgment.
+Recommended use is evidence-assisted review: surface uncertainty, confidence, and diagnostic evidence for human review rather than replacing judgment.
 
 ## Paper Draft
 
-A working EMNLP System Demonstration draft is placed under:
+The working EMNLP System Demonstration draft is under:
 
 ```text
 paper/emnlp_demo_draft.tex
 paper/references.bib
 ```
 
-The draft assumes the official EMNLP/ACL style files are added before compilation.
+## Reviewer Checklist
+
+- [x] lightweight local demo entry point
+- [x] exact startup command
+- [x] lightweight and full dependency files
+- [x] API endpoint examples
+- [x] sample inputs and sample output
+- [x] precomputed MS-LRC evidence examples
+- [x] Hugging Face Spaces Docker entry point
+- [x] limitations and ethical-use warning
+- [ ] license
+- [ ] public demo URL
+- [ ] demo video URL
 
 ## Citation
 
