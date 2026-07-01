@@ -129,7 +129,7 @@ This adds `torch`, `transformers`, `accelerate`, and plotting/data-analysis libr
 1. **Online / reviewer demo**
    - Command: `python app.py`
    - Runs interactive DTD detection.
-   - Shows MS-LRC evidence from `examples/mslrc_precomputed.json`.
+   - Shows MS-LRC evidence cards from `examples/mslrc_precomputed.json`, with raw JSON available in the interface.
    - Avoids loading transformer models during web startup.
 
 2. **Original DTD Flask demo**
