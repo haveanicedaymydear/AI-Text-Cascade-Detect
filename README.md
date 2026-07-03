@@ -4,6 +4,13 @@ This repository contains the demonstration artifact for **"DTD-LRC: An Interpret
 
 DTD-LRC combines a fast first-stage detector, **DTD**, with a deeper second-stage evidence module, **MS-LRC**, for cases where the first-stage confidence falls in an uncertainty band. The reviewer-facing web demo is intentionally lightweight: it runs DTD interactively and shows MS-LRC evidence through precomputed examples. The full local MS-LRC pipeline remains available for machines with transformer dependencies and model cache.
 
+## Current Artifact Links
+
+- Live demo: https://huggingface.co/spaces/YohanChow/DTD-LRC-AI-Text-Detector
+- Direct app URL: https://yohanchow-dtd-lrc-ai-text-detector.hf.space
+- Demo video: https://youtu.be/Z0NXF_Ghasg
+- Artifact links file: [ARTIFACT_LINKS.md](ARTIFACT_LINKS.md)
+
 ## Actual Application Entry Points
 
 The original Flask application in this repository is:
@@ -218,30 +225,3 @@ Known limitations include:
 - high compute cost for full MS-LRC because it requires multiple language-model evaluations
 
 Recommended use is evidence-assisted review: surface uncertainty, confidence, and diagnostic evidence for human review rather than replacing judgment.
-
-## Paper Draft
-
-The working EMNLP System Demonstration draft is under:
-
-```text
-paper/emnlp_demo_draft.tex
-paper/references.bib
-```
-
-## Reviewer Checklist
-
-- [x] lightweight local demo entry point
-- [x] exact startup command
-- [x] lightweight and full dependency files
-- [x] API endpoint examples
-- [x] sample inputs and sample output
-- [x] precomputed MS-LRC evidence examples
-- [x] Hugging Face Spaces Docker entry point
-- [x] limitations and ethical-use warning
-- [ ] license
-- [ ] public demo URL
-- [ ] demo video URL
-
-## Citation
-
-Citation information will be added after submission.
