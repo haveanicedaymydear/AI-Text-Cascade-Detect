@@ -1,0 +1,183 @@
+% UncertaiNLP 2026 @ EMNLP draft.
+% Compile with the official ACL/EMNLP style files.
+% This version reframes DTD-LRC as an uncertainty-aware evidence-escalation paper.
+
+\documentclass[11pt]{article}
+
+\usepackage{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{xcolor}
+
+\title{DTD-LRC: Uncertainty-Gated Evidence Escalation for Open-World Machine-Generated Text Detection}
+
+\author{
+Livan Zhou \\
+Coventry University \\
+\texttt{TODO@email.com}
+\And
+Zhang TODO \\
+Coventry University \\
+\texttt{TODO@email.com}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Machine-generated text detection is inherently uncertainty-sensitive: short inputs, domain shifts, lightly edited generations, and unfamiliar generator families can make binary detector outputs brittle and overconfident. We present DTD-LRC, an uncertainty-gated evidence-escalation framework for open-world machine-generated text detection. The first stage, DTD, performs fast screening using TF--IDF and linguistic features. Rather than forcing every input into a single final decision, DTD-LRC treats low-confidence regions as signals for evidence escalation. Inputs whose Stage-1 probabilities fall inside an uncertainty band are routed to MS-LRC, a multi-scale ladder-response module that measures length-normalized negative log-likelihood patterns across evaluator model families and scales. The system exposes confidence, routing decisions, feature evidence, ladder-response curves, and family-scale NLL matrices. Internal validation shows that the first-stage detector preserves low-latency inference while the cascade reserves deeper multi-model evidence for uncertain cases. DTD-LRC is intended as an auditable decision-support system for human review, not as a punitive or fully automatic detector.
+\end{abstract}
+
+\section{Introduction}
+
+Large language models can generate fluent text across many domains, making machine-generated text detection difficult under open-world conditions. A detector may encounter student essays, news-style writing, forum posts, technical documentation, creative prose, and lightly edited model outputs from generators unseen during training. In such settings, uncertainty is not an edge case: it is central to the reliability of the detection process.
+
+Many detectors return a single document-level label or score. While this can be useful for high-confidence cases, it becomes problematic when the signal is weak. A supervised classifier may overfit surface artifacts from its training distribution, while likelihood-based methods can be sensitive to length, topic, register, and evaluator-model choice. In practical review settings, an uncertain detector should not simply produce a confident binary judgment. It should surface its uncertainty and, when possible, escalate the input to richer evidence.
+
+This paper presents \textbf{DTD-LRC}, an uncertainty-gated evidence-escalation framework for open-world machine-generated text detection. The central design principle is selective routing: easy cases receive a fast first-stage decision, while low-confidence cases are escalated to a more expensive multi-model evidence module. The first stage, DTD, uses a supervised feature-based detector to produce an AI probability $p_1$. If $p_1$ lies outside a predefined uncertainty band, the system returns the first-stage decision. If $p_1$ lies inside the band, the input is routed to MS-LRC, which computes ladder-response evidence using length-normalized negative log-likelihood across evaluator families and scales.
+
+Our contributions are:
+\begin{itemize}
+    \item an uncertainty-gated cascade for AI-text detection that treats low-confidence predictions as evidence-escalation signals rather than forced final decisions;
+    \item a multi-scale ladder-response evidence module that characterizes how NLL/byte changes across evaluator model families and scales;
+    \item a public artifact with a live demo, API, repository, and demonstration video that exposes prediction, confidence, routing status, and interpretable evidence for human review.
+\end{itemize}
+
+\section{Related Work}
+
+\paragraph{Machine-generated text detection.}
+Early and contemporary approaches to machine-generated text detection include token-probability visualization, supervised classifiers, likelihood-based scoring, curvature-based methods, and cross-model scoring. GLTR visualizes token likelihood patterns to support human inspection \cite{gehrmann2019gltr}. DetectGPT detects generated text using probability curvature under perturbations \cite{mitchell2023detectgpt}, while Fast-DetectGPT improves efficiency through conditional probability curvature \cite{bao2024fastdetectgpt}. Binoculars uses cross-model perplexity comparison for zero-shot detection \cite{hans2024binoculars}. Ghostbuster searches over features for detecting text ghostwritten by language models \cite{verma2024ghostbuster}. DTD-LRC is complementary to these methods: its focus is not only the final label, but also uncertainty-aware routing and auditable evidence exposure.
+
+\paragraph{Uncertainty-aware NLP and selective prediction.}
+Uncertainty-aware NLP emphasizes calibrated confidence, abstention, selective prediction, and decision procedures that avoid unsupported overconfidence. This perspective is especially important for AI-text detection, where false positives can create academic, professional, or moderation harms. DTD-LRC follows this principle by treating an intermediate probability band as an uncertainty region. Instead of forcing every case into the same decision path, the system escalates uncertain cases to richer evidence.
+
+\paragraph{Auditable detection systems.}
+A practical detector should make its decision process inspectable. In educational or moderation settings, a document-level score without evidence is difficult to audit. DTD-LRC exposes the route used, confidence score, uncertainty status, and second-stage diagnostic artifacts. This makes the system better suited for evidence-assisted human review than for automatic punitive decisions.
+
+\section{DTD-LRC Framework}
+
+\subsection{Stage 1: Fast DTD Detector}
+
+DTD is a supervised feature-based detector. Given input text $x$, it constructs a representation from TF--IDF features and handcrafted linguistic indicators, including lexical diversity, sentence-length statistics, punctuation density, repetition features, and structural/style markers. A Random Forest classifier outputs an AI probability:
+\[
+p_1 = P_{\mathrm{DTD}}(\mathrm{AI}\mid x).
+\]
+The first-stage confidence is defined as:
+\[
+c_1 = \max(p_1, 1-p_1).
+\]
+This stage is designed for low-latency interaction and acts as the first uncertainty sensor in the cascade.
+
+\subsection{Uncertainty Gate and Selective Routing}
+
+DTD-LRC uses a probability band $[\tau_l, \tau_u] = [0.41, 0.61]$ as its current uncertainty gate. The routing decision is:
+\[
+\mathrm{route}(x)=
+\begin{cases}
+\mathrm{DTD}, & p_1 \notin [\tau_l,\tau_u],\\
+\mathrm{MS\mbox{-}LRC}, & p_1 \in [\tau_l,\tau_u].
+\end{cases}
+\]
+The gate implements selective prediction in a system-oriented form. A confident first-stage output is returned immediately, while a borderline output is not treated as sufficient evidence. Instead, it triggers escalation to MS-LRC.
+
+\subsection{Stage 2: MS-LRC Evidence}
+
+MS-LRC treats evaluator language models as measurement instruments. For each text $x$ and evaluator model $M$, it computes length-normalized negative log-likelihood:
+\[
+s(x;M)=\frac{-\sum_{t=2}^{T}\log p_M(x_t\mid x_{<t})}{|\mathrm{bytes}(x)|}.
+\]
+The system evaluates text across model scales and families. For each scale ladder, MS-LRC extracts response-curve features:
+\[
+\Delta_{\mathrm{early}}=s_{\mathrm{small}}-s_{\mathrm{mid}}, \quad
+\Delta_{\mathrm{late}}=s_{\mathrm{mid}}-s_{\mathrm{large}},
+\]
+\[
+\Delta_{\mathrm{overall}}=s_{\mathrm{small}}-s_{\mathrm{large}}, \quad
+r=\frac{\Delta_{\mathrm{early}}}{\Delta_{\mathrm{late}}+\epsilon}.
+\]
+These features describe where predictability changes as evaluator capacity increases. The resulting second-stage evidence is presented as ladder-response curves and family-scale NLL matrices.
+
+\section{Experimental Setup}
+
+We evaluate DTD-LRC from three perspectives: first-stage detection performance, cascade routing behavior, and artifact usability. Detection performance is measured using AUC, F1, precision, recall, and accuracy. Routing behavior is measured by the proportion of examples whose first-stage probabilities fall inside the uncertainty band. Usability is assessed through runtime, API validity, and whether diagnostic artifacts are generated successfully.
+
+The first-stage detector was evaluated on a machine-generated text detection benchmark setting inspired by M4GT-Bench-style evaluation \cite{wang2024m4gtbench}. The MS-LRC smoke evaluation used paired human and AI texts inspired by HC3-style settings \cite{guo2023hc3}. We emphasize internal system validation and uncertainty-aware behavior rather than direct numerical superiority over baselines that were not rerun under identical conditions.
+
+\section{Results and Analysis}
+
+\subsection{Detection Performance}
+
+Table~\ref{tab:metrics} summarizes the current internal validation results. DTD reaches AUC 0.9899, F1 0.96, precision 0.96, recall 0.96, and average latency of 38 ms per prediction. The MS-LRC smoke evaluation reaches AUC 0.9622, accuracy 0.9333, and F1 0.9375. These results indicate that the first stage is suitable for interactive screening, while the second stage can provide additional evidence for uncertain cases.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llr}
+\toprule
+Component & Metric & Value \\
+\midrule
+DTD & AUC & 0.9899 \\
+DTD & F1 & 0.96 \\
+DTD & Precision / Recall & 0.96 / 0.96 \\
+DTD & Avg. latency & 38 ms \\
+Gate & Uncertainty band & [0.41, 0.61] \\
+MS-LRC & AUC & 0.9622 \\
+MS-LRC & Accuracy & 0.9333 \\
+MS-LRC & F1 & 0.9375 \\
+Cascade & Stage-2 usage & 31 / 120 \\
+\bottomrule
+\end{tabular}
+\caption{Headline internal validation metrics for DTD-LRC.}
+\label{tab:metrics}
+\end{table}
+
+\subsection{Routing Behavior}
+
+In a cascade smoke run, 31 of 120 examples were routed to Stage 2, corresponding to approximately 25.8\% Stage-2 usage. This suggests that the gate does not route all examples to the expensive module, while still preserving an explicit path for low-confidence cases. In deployment, the gate can be tuned depending on the cost of false positives, false negatives, and additional model evaluation.
+
+\subsection{Uncertainty and Failure Cases}
+
+The uncertainty band should be interpreted as a practical escalation region rather than a calibrated proof of ambiguity. Short, formulaic, translated, heavily edited, or stylistically unusual human writing may still produce false positives. Conversely, lightly edited generated text may evade shallow features. DTD-LRC addresses this by exposing uncertainty and routing status, but it does not eliminate the need for human review.
+
+\section{System Artifact}
+
+The public artifact includes a browser-based demo, JSON API, GitHub repository, and demonstration video. The live demo runs interactive DTD detection and exposes precomputed MS-LRC evidence examples. This design prioritizes stability for public review: full MS-LRC execution requires multiple language-model evaluations and is therefore provided as a local execution path through the repository.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/web_interface.png}
+\caption{Live web interface for interactive DTD detection and precomputed MS-LRC evidence inspection.}
+\label{fig:web}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/web_result.png}
+\caption{Example detection result showing predicted label, AI probability, confidence score, runtime, and uncertainty-aware stage status.}
+\label{fig:result}
+\end{figure}
+
+The artifact links are:
+\begin{itemize}
+    \item Source code: \url{https://github.com/haveanicedaymydear/AI-Text-Cascade-Detect}
+    \item Live demo: \url{https://huggingface.co/spaces/YohanChow/DTD-LRC-AI-Text-Detector}
+    \item Demo video: \url{https://youtu.be/Z0NXF_Ghasg}
+\end{itemize}
+
+\section{Limitations and Ethical Use}
+
+DTD-LRC should not be used as the sole basis for punitive academic, employment, or moderation decisions. Machine-generated text detection is probabilistic, and false positives can occur. The current MS-LRC prototype also depends on the selected evaluator model families, and broader cross-generator and cross-domain robustness should be tested with additional source models, evaluator families, languages, and domains. Future work should evaluate calibration error, threshold sensitivity, selective-risk trade-offs, and human-review outcomes.
+
+\section{Conclusion}
+
+We presented DTD-LRC, an uncertainty-gated evidence-escalation framework for open-world machine-generated text detection. Instead of forcing every input through a single binary decision path, DTD-LRC routes low-confidence first-stage predictions to a deeper multi-model evidence module. The system combines fast screening, selective routing, interpretable ladder-response evidence, and a public artifact for human review. This framing connects AI-text detection with uncertainty-aware NLP and supports further work on calibrated, auditable, and non-punitive detection systems.
+
+\bibliographystyle{acl_natbib}
+\bibliography{references}
+
+\end{document}
