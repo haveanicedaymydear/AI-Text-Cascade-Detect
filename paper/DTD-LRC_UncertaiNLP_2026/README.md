@@ -6,7 +6,7 @@ This directory contains the UncertaiNLP 2026 @ EMNLP version of the DTD-LRC pape
 
 Third Workshop on Uncertainty-Aware NLP @ EMNLP 2026 (UncertaiNLP 2026)
 
-Current status: manuscript in preparation. Do not describe the paper as submitted until the OpenReview submission is actually completed.
+Current status: submitted to UncertaiNLP 2026 @ EMNLP via OpenReview.
 
 ## Paper Framing
 
@@ -21,7 +21,7 @@ The central claim is that low-confidence first-stage predictions should trigger 
 
 - `main.tex` — UncertaiNLP-oriented LaTeX draft.
 - `references.bib` — references used by the draft.
-- `openreview_fields.md` — suggested OpenReview title, keywords, TL;DR, and research areas.
+- `openreview_fields.md` — OpenReview title, keywords, TL;DR, research area, and submission status notes.
 
 ## Compile Notes
 
