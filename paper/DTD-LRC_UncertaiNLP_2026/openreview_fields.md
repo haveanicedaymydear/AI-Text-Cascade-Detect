@@ -6,34 +6,31 @@ DTD-LRC: Uncertainty-Gated Evidence Escalation for Open-World Machine-Generated 
 
 ## Keywords
 
-uncertainty-aware NLP, machine-generated text detection, AI text detection, selective prediction, calibration, interpretable evidence, cascade models, large language models
+uncertainty-aware NLP, machine-generated text detection, AI text detection, uncertainty quantification, selective prediction, interpretable evidence, cascade models, large language models
 
 ## TL;DR
 
 We present DTD-LRC, an uncertainty-gated cascade for open-world AI-text detection that escalates uncertain first-stage predictions to interpretable multi-model evidence.
 
-## Research Area Suggestions
+## Research Area
 
-Select the closest available options in the form, prioritizing:
+Selected / recommended:
 
-- Model uncertainty
-- Selective prediction
-- Evaluation
-- Calibration
-- Interpretable NLP
-- LLM reliability
-- Hallucination detection, if relevant
+- Hallucination Detection and Uncertainty Quantification
 
-## Submission Status Wording
+## Submission Status
 
-Until the OpenReview submission is actually completed, use:
+Submitted to UncertaiNLP 2026 @ EMNLP via OpenReview.
 
-- Manuscript in preparation for UncertaiNLP 2026 @ EMNLP
-- Target venue: UncertaiNLP 2026 @ EMNLP
+After the OpenReview page becomes publicly visible or a shareable submission URL is available, add the submission URL here.
 
-After the paper is submitted and a submission record exists, use:
+## CV Wording
 
-- Submitted to UncertaiNLP 2026 @ EMNLP
-- Under review at UncertaiNLP 2026 @ EMNLP
+Current accurate wording:
 
-Do not use "submitted" before the submission has actually been completed.
+- Submitted to UncertaiNLP 2026 @ EMNLP.
+- Under review at UncertaiNLP 2026 @ EMNLP.
+
+Recommended CV entry:
+
+Livan Zhou and Heyang Zhang. DTD-LRC: Uncertainty-Gated Evidence Escalation for Open-World Machine-Generated Text Detection. Submitted to UncertaiNLP 2026 @ EMNLP.
