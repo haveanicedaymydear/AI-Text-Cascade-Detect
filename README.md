@@ -4,6 +4,16 @@ This repository contains the demonstration artifact for **"DTD-LRC: An Interpret
 
 DTD-LRC combines a fast first-stage detector, **DTD**, with a deeper second-stage evidence module, **MS-LRC**, for cases where the first-stage confidence falls in an uncertainty band. The reviewer-facing web demo is intentionally lightweight: it runs DTD interactively and shows MS-LRC evidence through precomputed examples. The full local MS-LRC pipeline remains available for machines with transformer dependencies and model cache.
 
+## Current Submission Status
+
+A workshop-paper version of this work, **"DTD-LRC: Uncertainty-Gated Evidence Escalation for Open-World Machine-Generated Text Detection"**, has been submitted to **UncertaiNLP 2026 @ EMNLP** via OpenReview.
+
+The UncertaiNLP-oriented paper files are available in:
+
+```text
+paper/DTD-LRC_UncertaiNLP_2026/
+```
+
 ## Current Artifact Links
 
 - Live demo: https://huggingface.co/spaces/YohanChow/DTD-LRC-AI-Text-Detector
