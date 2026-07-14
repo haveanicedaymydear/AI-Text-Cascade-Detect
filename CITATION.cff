@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this research artifact, please cite the manuscript and repository."
+title: "DTD-LRC: Uncertainty-Gated Evidence Escalation for Open-World Machine-Generated Text Detection"
+version: 1.0.0
+date-released: 2026-07-14
+authors:
+  - family-names: Zhou
+    given-names: Livan
+    email: zhoulivan@gmail.com
+repository-code: "https://github.com/haveanicedaymydear/AI-Text-Cascade-Detect"
+url: "https://huggingface.co/spaces/YohanChow/DTD-LRC-AI-Text-Detector"
+license: MIT
+keywords:
+  - machine-generated text detection
+  - uncertainty-aware NLP
+  - cascade inference
+  - AI-generated content detection
+  - interpretable machine learning
