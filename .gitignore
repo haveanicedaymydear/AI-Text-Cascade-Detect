@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build and packaging
+build/
+dist/
+*.egg-info/
+
+# Local model caches and generated outputs
+.cache/
+.runtime/
+logs/
+outputs/
+results/local/
+*.log
+
+# Large local checkpoints should be documented, not committed ad hoc
+checkpoints/
+model_cache/
